@@ -1,0 +1,6 @@
+openwrt/
+artifacts/
+*.log
+__pycache__/
+*.pyc
+tmp*/

@@ -1,0 +1,132 @@
+name: Build OpenWrt R6800
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build.yml"
+      - "config/**"
+      - "scripts/**"
+      - "patches/**"
+      - "tests/**"
+      - "README.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r6800-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OPENWRT_VERSION: v24.10.6
+  EASYTIER_LUCI_COMMIT: 9c51d3f8d2bfcefd039f2ff2354c6a7674293a06
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out build configuration
+        uses: actions/checkout@v4
+
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/hostedtoolcache /usr/share/dotnet /opt/ghc
+          sudo apt-get clean
+          df -h /
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential gcc-multilib g++-multilib gawk gettext git \
+            libncurses-dev libssl-dev zlib1g-dev python3 python3-pyelftools \
+            device-tree-compiler flex bison patch perl wget curl unzip rsync \
+            xsltproc file time ca-certificates
+
+      - name: Run patch and layout tests
+        run: |
+          python3 tests/test_layout.py
+          python3 tests/test_easytier_patch.py
+          python3 tests/test_scpart_patch.py
+
+      - name: Check out OpenWrt and EasyTier
+        run: |
+          git clone --depth 1 --branch "$OPENWRT_VERSION" https://github.com/openwrt/openwrt.git openwrt
+          git clone https://github.com/EasyTier/luci-app-easytier.git openwrt/package/easytier-luci
+          git -C openwrt/package/easytier-luci checkout "$EASYTIER_LUCI_COMMIT"
+          git -C openwrt/package/easytier-luci apply "$GITHUB_WORKSPACE/patches/easytier/0001-verify-mipsel-core-sha256.patch"
+
+      - name: Cache OpenWrt downloads
+        uses: actions/cache@v4
+        with:
+          path: openwrt/dl
+          key: openwrt-${{ env.OPENWRT_VERSION }}-dl-${{ hashFiles('config/**', 'scripts/**', 'patches/**') }}
+          restore-keys: openwrt-${{ env.OPENWRT_VERSION }}-dl-
+
+      - name: Apply and verify the 64 MiB R6800 layout
+        run: |
+          python3 scripts/apply-r6800-64mib.py openwrt
+          python3 scripts/validate-r6800.py openwrt --skip-config
+          git -C openwrt diff --check
+
+      - name: Update and install feeds
+        working-directory: openwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Generate configuration
+        working-directory: openwrt
+        run: |
+          cp "$GITHUB_WORKSPACE/config/r6800.config" .config
+          make defconfig
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/validate-r6800.py openwrt
+          cp openwrt/.config openwrt/config.buildinfo
+
+      - name: Download sources
+        working-directory: openwrt
+        run: |
+          set -o pipefail
+          make -j2 download V=s 2>&1 | tee "$GITHUB_WORKSPACE/download.log"
+
+      - name: Build firmware
+        working-directory: openwrt
+        run: |
+          set -o pipefail
+          make -j2 V=s 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+
+      - name: Validate images and final DTB
+        run: |
+          python3 scripts/validate-r6800.py openwrt --artifacts
+          ls -lh openwrt/bin/targets/ramips/mt7621/
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt-R6800-64MiB-${{ github.run_number }}
+          path: |
+            openwrt/bin/targets/ramips/mt7621/*.bin
+            openwrt/bin/targets/ramips/mt7621/*.img
+            openwrt/bin/targets/ramips/mt7621/*.manifest
+            openwrt/bin/targets/ramips/mt7621/*.buildinfo
+            openwrt/bin/targets/ramips/mt7621/profiles.json
+            openwrt/bin/targets/ramips/mt7621/sha256sums
+            openwrt/config.buildinfo
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenWrt-R6800-build-logs-${{ github.run_number }}
+          path: |
+            build.log
+            download.log
+          if-no-files-found: ignore
+          retention-days: 7

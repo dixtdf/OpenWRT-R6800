@@ -1,0 +1,22 @@
+--- a/easytier/Makefile
++++ b/easytier/Makefile
+@@ -28,6 +28,10 @@ endif
+ 
+ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+ 
++ifeq ($(APP_ARCH),mipsel)
++EASYTIER_SHA256:=65281c45ff62cc3be6efdeabd2e5c6bfd11b00545c8df3e940704a47fb72f97b
++endif
++
+ include $(INCLUDE_DIR)/package.mk
+ 
+ RSTRIP:=:
+@@ -61,5 +65,8 @@ define Build/Prepare
+ 	if [ ! -f $(PKG_BUILD_DIR)/easytier-core ]; then \
+ 		wget https://github.com/EasyTier/EasyTier/releases/download/v$(PKG_VERSION)/$(PKG_NAME)-linux-$(APP_ARCH)-v$(PKG_VERSION).zip -O $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip; \
++		if [ -n "$(EASYTIER_SHA256)" ]; then \
++			echo "$(EASYTIER_SHA256)  $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip" | sha256sum -c -; \
++		fi; \
+ 		unzip -o -j $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip -d $(PKG_BUILD_DIR); \
+ 		rm -f $(PKG_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION).zip; \
+ 	fi
