@@ -129,9 +129,14 @@ def validate_config(root: Path) -> None:
 def validate_artifacts(root: Path) -> None:
     output = root / OUTPUT
     prefix = "openwrt-ramips-mt7621-netgear_r6800"
-    for suffix in ("squashfs-factory.img", "squashfs-sysupgrade.bin",
-                   "initramfs-kernel.bin", "manifest", "config.buildinfo"):
-        path = output / f"{prefix}-{suffix}" if suffix != "config.buildinfo" else output / suffix
+    required_files = [
+        output / f"{prefix}-squashfs-factory.img",
+        output / f"{prefix}-squashfs-sysupgrade.bin",
+        output / f"{prefix}-initramfs-kernel.bin",
+        output / f"{prefix}.manifest",
+        output / "config.buildinfo",
+    ]
+    for path in required_files:
         require(path.is_file() and path.stat().st_size > 0, f"Missing artifact: {path}")
 
     manifest = (output / f"{prefix}.manifest").read_text(encoding="utf-8")
