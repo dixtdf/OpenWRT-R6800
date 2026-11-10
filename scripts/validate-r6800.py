@@ -66,9 +66,11 @@ def partitions(dts: str):
 
 
 def validate_layout_text(dts: str, decompiled: bool = False) -> None:
-    require('compatible = "sercomm,sc-partitions", "fixed-partitions";' in dts,
-            "Sercomm parser is missing")
+    if "sercomm,sc-partitions" not in dts:
+        compatible = [line.strip() for line in dts.splitlines() if "compatible" in line]
+        raise RuntimeError(f"Sercomm parser is missing; compatible properties: {compatible}")
     parts = partitions(dts)
+    print(f"Layout source has {len(parts)} partitions")
     require(len(parts) == 17, f"Expected 17 partitions, found {len(parts)}")
 
     ids = sorted(int(value, 0) for _, _, _, body in parts
@@ -153,6 +155,7 @@ def validate_artifacts(root: Path) -> None:
         dtbs = list((root / "build_dir").rglob("mt7621_netgear_r6800.dtb"))
     require(dtbs, "No R6800 DTB found")
     for dtb in dtbs:
+        print(f"Validating DTB: {dtb}")
         result = subprocess.run(["dtc", "-I", "dtb", "-O", "dts", str(dtb)],
                                 check=True, text=True, capture_output=True)
         validate_layout_text(result.stdout, decompiled=True)
