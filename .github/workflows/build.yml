@@ -72,6 +72,11 @@ jobs:
           python3 scripts/validate-r6800.py openwrt --skip-config
           git -C openwrt diff --check
 
+      - name: Install device overlay files
+        run: |
+          mkdir -p openwrt/files
+          cp -a "$GITHUB_WORKSPACE/files/." openwrt/files/
+
       - name: Update and install feeds
         working-directory: openwrt
         run: |
@@ -133,3 +138,24 @@ jobs:
             validation.log
           if-no-files-found: ignore
           retention-days: 7
+
+  publish:
+    name: Publish firmware images
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: OpenWrt-R6800-64MiB-${{ github.run_number }}
+          path: images
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-latest
+          name: build-latest
+          body: "Automated R6800 64MiB build."
+          files: |
+            images/**/*.bin

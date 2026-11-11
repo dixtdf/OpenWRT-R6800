@@ -1,0 +1,50 @@
+#!/bin/sh
+# R6800 factory/eeprom helper
+#   r6800-factory verify         show live radio MAC / txpower (sanity check)
+#   r6800-factory dump [file]    dump /dev/mtd5 (2 MiB) and print md5
+#   r6800-factory write <file>   unlock mtd5 via mtd-rw and write the image
+#
+# A healthy board reports txpower around 20 dBm; a board whose factory was
+# erased by an oversized UBI reports 6 dBm and a random MAC.
+
+FACTORY=/dev/mtd5
+DEFOUT=/root/factory-r6800.bin
+
+verify() {
+	for d in phy0 phy1; do
+		info=$(iwinfo "$d-ap0" info 2>/dev/null)
+		[ -z "$info" ] && info=$(iwinfo "$d" info 2>/dev/null)
+		mac=$(echo "$info" | awk '/Access Point/{print $3}')
+		pwr=$(echo "$info" | awk '/Tx-Power/{print $2}')
+		echo "$d mac=${mac:-?} txpower=${pwr:-?}dBm"
+	done
+	echo "note: txpower ~6 dBm + random MAC means the factory eeprom is missing"
+}
+
+dump() {
+	out=${1:-$DEFOUT}
+	dd if=$FACTORY of="$out" bs=4096 2>/dev/null
+	md5sum "$out"
+}
+
+write() {
+	src=$1
+	[ -n "$src" ] || { echo "usage: r6800-factory write <file>"; exit 1; }
+	[ -f "$src" ] || { echo "missing $src"; exit 1; }
+	insmod mtd-rw i_want_a_brick=1 2>/dev/null
+	flags=$(cat /sys/class/mtd/mtd5/flags 2>/dev/null)
+	case "$flags" in
+	0x4??) : ;;
+	*) echo "mtd5 still read-only (flags=$flags); install kmod-mtd-rw first" ; exit 1 ;;
+	esac
+	mtd write "$src" $FACTORY || exit 1
+	sync
+	md5sum $FACTORY
+}
+
+case "$1" in
+verify) verify ;;
+dump) shift; dump "$@" ;;
+write) shift; write "$@" ;;
+*) echo "usage: r6800-factory {verify|dump|write}"; exit 1 ;;
+esac
