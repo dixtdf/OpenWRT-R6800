@@ -61,12 +61,25 @@ jobs:
           git -C openwrt/package/easytier-luci checkout "$EASYTIER_LUCI_COMMIT"
           git -C openwrt/package/easytier-luci apply "$GITHUB_WORKSPACE/patches/easytier/0001-verify-mipsel-core-sha256.patch"
 
-      - name: Cache OpenWrt downloads
+      - name: Cache downloads and cross toolchain
         uses: actions/cache@v4
         with:
-          path: openwrt/dl
-          key: openwrt-${{ env.OPENWRT_VERSION }}-dl-${{ hashFiles('config/**', 'scripts/**', 'patches/**') }}
-          restore-keys: openwrt-${{ env.OPENWRT_VERSION }}-dl-
+          path: |
+            openwrt/dl
+            openwrt/staging_dir/toolchain-mipsel_24kc_gcc-13.3.0_musl
+            openwrt/build_dir/toolchain-mipsel_24kc_gcc-13.3.0_musl
+          key: openwrt-${{ env.OPENWRT_VERSION }}-tc-mt7621
+          restore-keys: openwrt-${{ env.OPENWRT_VERSION }}-tc-mt7621
+
+      - name: Cache built kernel and target staging
+        uses: actions/cache@v4
+        with:
+          path: |
+            openwrt/build_dir/target-mipsel_24kc_musl/linux-ramips_mt7621
+            openwrt/staging_dir/target-mipsel_24kc_musl
+          key: openwrt-${{ env.OPENWRT_VERSION }}-kernel-${{ hashFiles('config/**', 'scripts/**', 'patches/**', 'tests/**') }}
+          restore-keys: |
+            openwrt-${{ env.OPENWRT_VERSION }}-kernel-
 
       - name: Apply and verify the 64 MiB R6800 layout
         run: |
@@ -100,14 +113,14 @@ jobs:
         working-directory: openwrt
         run: |
           set -o pipefail
-          make -j2 download V=s 2>&1 | tee "$GITHUB_WORKSPACE/download.log"
+          make -j$(nproc) download V=s 2>&1 | tee "$GITHUB_WORKSPACE/download.log"
 
       - name: Build firmware
         id: compile
         working-directory: openwrt
         run: |
           set -o pipefail
-          make -j2 V=s 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
+          make -j$(nproc) V=s 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
 
       - name: Validate images and final DTB
         run: |
