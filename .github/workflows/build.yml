@@ -121,7 +121,8 @@ jobs:
           echo "kernel config: $KCONFIG"
           test -n "$KCONFIG"
           grep -E '^CONFIG_TCP_CONG_BBR=y$' "$KCONFIG"
-          grep -E '^CONFIG_DEFAULT_TCP_CONG="bbr"$' "$KCONFIG"
+          grep -E '^CONFIG_DEFAULT_BBR=y$' "$KCONFIG"
+          grep -E '^# CONFIG_DEFAULT_CUBIC is not set$' "$KCONFIG"
           grep -E '^CONFIG_NET_MEDIATEK_SOC=y$' "$KCONFIG"
 
       - name: Upload firmware

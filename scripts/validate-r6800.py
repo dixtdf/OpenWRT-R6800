@@ -116,8 +116,10 @@ def validate_performance(root: Path, overlay: bool) -> None:
         encoding="utf-8")
     require("CONFIG_TCP_CONG_BBR=y" in kernel_config,
             "BBR is not built into the kernel")
-    require('CONFIG_DEFAULT_TCP_CONG="bbr"' in kernel_config,
+    require("CONFIG_DEFAULT_BBR=y" in kernel_config,
             "BBR is not the default congestion control")
+    require("CONFIG_DEFAULT_CUBIC=y" not in kernel_config,
+            "The default congestion control choice is ambiguous")
     require("CONFIG_NET_MEDIATEK_SOC=y" in kernel_config,
             "The mainline MT7621 Ethernet driver was removed")
 

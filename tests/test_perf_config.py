@@ -17,6 +17,8 @@ def test_kernel_config() -> None:
         config.parent.mkdir(parents=True)
         config.write_text(
             "CONFIG_NET_MEDIATEK_SOC=y\n"
+            "CONFIG_TCP_CONG_ADVANCED=y\n"
+            "CONFIG_DEFAULT_CUBIC=y\n"
             'CONFIG_DEFAULT_TCP_CONG="cubic"\n',
             encoding="utf-8",
         )
@@ -24,8 +26,10 @@ def test_kernel_config() -> None:
         subprocess.run([sys.executable, str(SCRIPT), str(root)], check=True)
         first = config.read_text(encoding="utf-8")
         assert "CONFIG_TCP_CONG_BBR=y" in first
-        assert 'CONFIG_DEFAULT_TCP_CONG="bbr"' in first
-        assert 'CONFIG_DEFAULT_TCP_CONG="cubic"' not in first
+        assert "CONFIG_DEFAULT_BBR=y" in first
+        assert "# CONFIG_DEFAULT_CUBIC is not set" in first
+        assert "CONFIG_DEFAULT_CUBIC=y" not in first
+        assert "CONFIG_DEFAULT_TCP_CONG" not in first
         assert "CONFIG_NET_MEDIATEK_SOC=y" in first
 
         # Running twice must not duplicate the managed block.

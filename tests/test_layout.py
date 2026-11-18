@@ -29,6 +29,7 @@ def main() -> None:
         kernel_config.write_text(
             "CONFIG_NET_MEDIATEK_SOC=y\n"
             "CONFIG_NET_DSA=y\n"
+            "CONFIG_DEFAULT_CUBIC=y\n"
             'CONFIG_DEFAULT_TCP_CONG="cubic"\n',
             encoding="utf-8",
         )
