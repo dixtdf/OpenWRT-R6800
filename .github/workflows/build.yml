@@ -115,6 +115,15 @@ jobs:
           python3 scripts/validate-r6800.py openwrt --artifacts 2>&1 | tee "$GITHUB_WORKSPACE/validation.log"
           ls -lh openwrt/bin/targets/ramips/mt7621/
 
+      - name: Verify performance options in the built kernel
+        run: |
+          KCONFIG="$(find openwrt/build_dir -path '*linux-ramips_mt7621*' -name .config | head -n1)"
+          echo "kernel config: $KCONFIG"
+          test -n "$KCONFIG"
+          grep -E '^CONFIG_TCP_CONG_BBR=y$' "$KCONFIG"
+          grep -E '^CONFIG_DEFAULT_TCP_CONG="bbr"$' "$KCONFIG"
+          grep -E '^CONFIG_NET_MEDIATEK_SOC=y$' "$KCONFIG"
+
       - name: Upload firmware
         if: ${{ success() || steps.compile.outcome == 'success' }}
         uses: actions/upload-artifact@v4

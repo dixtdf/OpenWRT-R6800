@@ -12,7 +12,10 @@
 - 包含 EasyTier 2.7.0 和 LuCI 中文管理页面；
 - 不包含 Passwall、Passwall2 或 OpenVPN；
 - 包含 dnsmasq-full、DDNS/Cloudflare、SQM、USB 存储、常用文件系统、SFTP 和基础管理工具；
+- 性能向：内核内置 **BBR** 并设为默认拥塞控制，默认开启 **flow offloading**，附带 `r6800-perf` 调优脚本、`irqbalance`、`iperf3`、`ethtool`；
 - 构建后自动检查软件包、镜像和最终 DTB。
+
+> **性能上限说明：**LAN↔LAN 由 MT7530 硬件转发（~940 Mbps）；打到路由器自身的流量受 `mtk_eth_soc` 单 RX 队列限制（~470–650 Mbps）；NAT 转发在开启 flow offloading 后可达 800–940 Mbps。详见 [docs/performance.md](docs/performance.md)。
 
 > **警告：**此布局只能防止后续构建覆盖 Factory，不能恢复已经丢失的无线校准数据。刷机前必须备份当前设备的 Factory 和 SC PART_MAP。不要在未备份的情况下拿另一台路由器的 Factory 直接替换本机数据。
 
