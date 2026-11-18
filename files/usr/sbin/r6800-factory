@@ -1,14 +1,53 @@
 #!/bin/sh
 # R6800 factory/eeprom helper
 #   r6800-factory verify         show live radio MAC / txpower (sanity check)
-#   r6800-factory dump [file]    dump /dev/mtd5 (2 MiB) and print md5
-#   r6800-factory write <file>   unlock mtd5 via mtd-rw and write the image
+#   r6800-factory dump [file]    dump the factory partition (2 MiB) and print md5
+#   r6800-factory write <file>   unlock the factory MTD via mtd-rw and write the image
 #
 # A healthy board reports txpower around 20 dBm; a board whose factory was
 # erased by an oversized UBI reports 6 dBm and a random MAC.
 
-FACTORY=/dev/mtd5
 DEFOUT=/root/factory-r6800.bin
+
+find_factory_mtd() {
+	# Prefer the DTS label. The MTD number changes when the 64 MiB layout
+	# reclaims the English UI / ML partitions, so never hardcode it.
+	for m in /sys/class/mtd/mtd*; do
+		[ -r "$m/name" ] || continue
+		if [ "$(cat "$m/name" 2>/dev/null)" = "factory" ]; then
+			echo "/dev/$(basename "$m")"
+			return 0
+		fi
+	done
+
+	# Fallback for kernels that do not expose the label: pick the first
+	# 2 MiB partition at or after 0x04600000. The vendor partition map
+	# usually places factory at 0x04620000, not 0x04600000.
+	best=""
+	bestoff=""
+	for m in /sys/class/mtd/mtd*; do
+		[ -r "$m/offset" ] && [ -r "$m/size" ] || continue
+		off=$(cat "$m/offset" 2>/dev/null) || continue
+		size=$(cat "$m/size" 2>/dev/null) || continue
+		[ "$size" = "2097152" ] || continue
+		[ "$off" -ge 73400320 ] 2>/dev/null || continue
+		if [ -z "$bestoff" ] || [ "$off" -lt "$bestoff" ]; then
+			best="/dev/$(basename "$m")"
+			bestoff=$off
+		fi
+	done
+	[ -n "$best" ] && { echo "$best"; return 0; }
+
+	return 1
+}
+
+factory_mtd() {
+	mtd=$(find_factory_mtd) || {
+		echo "cannot find the 2 MiB factory MTD (offset 0x4600000)" >&2
+		exit 1
+	}
+	echo "$mtd"
+}
 
 verify() {
 	for d in phy0 phy1; do
@@ -23,7 +62,9 @@ verify() {
 
 dump() {
 	out=${1:-$DEFOUT}
-	dd if=$FACTORY of="$out" bs=4096 2>/dev/null
+	factory=$(factory_mtd)
+	echo "factory MTD: $factory"
+	dd if="$factory" of="$out" bs=4096 2>/dev/null
 	md5sum "$out"
 }
 
@@ -31,20 +72,22 @@ write() {
 	src=$1
 	[ -n "$src" ] || { echo "usage: r6800-factory write <file>"; exit 1; }
 	[ -f "$src" ] || { echo "missing $src"; exit 1; }
+	factory=$(factory_mtd)
+	echo "factory MTD: $factory"
 	insmod mtd-rw i_want_a_brick=1 2>/dev/null
-	flags=$(cat /sys/class/mtd/mtd5/flags 2>/dev/null)
+	flags=$(cat "/sys/class/mtd/$(basename "$factory")/flags" 2>/dev/null)
 	case "$flags" in
 	0x4??) : ;;
-	*) echo "mtd5 still read-only (flags=$flags); install kmod-mtd-rw first" ; exit 1 ;;
+	*) echo "factory MTD is still read-only (flags=$flags); install kmod-mtd-rw first"; exit 1 ;;
 	esac
-	mtd write "$src" $FACTORY || exit 1
+	mtd write "$src" "$factory" || exit 1
 	sync
-	md5sum $FACTORY
+	md5sum "$factory"
 }
 
 case "$1" in
-verify) verify ;;
-dump) shift; dump "$@" ;;
-write) shift; write "$@" ;;
-*) echo "usage: r6800-factory {verify|dump|write}"; exit 1 ;;
+	verify) verify ;;
+	dump) shift; dump "$@" ;;
+	write) shift; write "$@" ;;
+	*) echo "usage: r6800-factory {verify|dump|write}"; exit 1 ;;
 esac

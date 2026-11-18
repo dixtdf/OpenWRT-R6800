@@ -1,0 +1,57 @@
+#!/bin/sh
+# r6800-perf - performance profile helper for the R6800 build
+#
+#   r6800-perf status   show current tuning
+#   r6800-perf max      enable flow offloading + BBR + performance sysctls
+#   r6800-perf sqm      disable flow offloading (required by SQM/QoS)
+#
+# The MT7621 has a single Ethernet RX queue, so LAN<->LAN switching is
+# always line rate while traffic that terminates on the router is CPU
+# bound.  These knobs mainly help LAN<->WAN forwarding and lossy Wi-Fi.
+
+set -e
+
+sysctl_apply() {
+	sysctl -q -p /etc/sysctl.d/10-r6800-perf.conf 2>/dev/null || true
+}
+
+set_offload() {
+	value="$1"
+	uci -q get firewall.@defaults[0] >/dev/null || return 0
+	uci set firewall.@defaults[0].flow_offloading="$value"
+	uci set firewall.@defaults[0].flow_offloading_hw='0'
+	uci commit firewall
+	/etc/init.d/firewall reload >/dev/null 2>&1 || true
+}
+
+status() {
+	echo "congestion control : $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)"
+	echo "flow offloading    : $(uci -q get firewall.@defaults[0].flow_offloading || echo unset)"
+	echo "packet steering    : $(uci -q get network.globals.packet_steering || echo unset)"
+	echo "netdev_budget      : $(sysctl -n net.core.netdev_budget 2>/dev/null)"
+	echo "tcp_rmem max       : $(sysctl -n net.ipv4.tcp_rmem 2>/dev/null | awk '{print $3}')"
+	echo "RPS mask (eth0)    : $(cat /sys/class/net/eth0/queues/rx-0/rps_cpus 2>/dev/null)"
+	echo "irqbalance         : $(pgrep irqbalance >/dev/null 2>&1 && echo running || echo stopped)"
+	echo
+	echo "wired LAN<->LAN is switched by MT7530 (line rate, no CPU involved)"
+	echo "traffic to the router itself is limited by the single mtk_eth_soc RX queue"
+}
+
+case "$1" in
+	status)
+		status
+		;;
+	max)
+		set_offload 1
+		sysctl_apply
+		echo "flow offloading on, BBR + tuned sysctls applied"
+		;;
+	sqm)
+		set_offload 0
+		echo "flow offloading off (SQM/QoS can now see every packet)"
+		;;
+	*)
+		echo "usage: r6800-perf {status|max|sqm}"
+		exit 1
+		;;
+esac

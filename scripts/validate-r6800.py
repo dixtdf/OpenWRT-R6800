@@ -33,6 +33,9 @@ REQUIRED_PACKAGES = {
     "kmod-fs-vfat",
     "kmod-fs-exfat",
     "kmod-fs-ntfs3",
+    "irqbalance",
+    "iperf3",
+    "ethtool",
 }
 
 
@@ -108,6 +111,26 @@ def validate_image_definition(root: Path) -> None:
             "R6800 IMAGE_SIZE is not 64 MiB")
 
 
+def validate_performance(root: Path, overlay: bool) -> None:
+    kernel_config = (root / "target/linux/ramips/mt7621/config-6.6").read_text(
+        encoding="utf-8")
+    require("CONFIG_TCP_CONG_BBR=y" in kernel_config,
+            "BBR is not built into the kernel")
+    require('CONFIG_DEFAULT_TCP_CONG="bbr"' in kernel_config,
+            "BBR is not the default congestion control")
+    require("CONFIG_NET_MEDIATEK_SOC=y" in kernel_config,
+            "The mainline MT7621 Ethernet driver was removed")
+
+    if overlay:
+        for relative in (
+            "files/etc/sysctl.d/10-r6800-perf.conf",
+            "files/etc/uci-defaults/90-r6800-perf",
+            "files/usr/sbin/r6800-perf",
+        ):
+            require((root / relative).is_file(),
+                    f"Performance overlay file is missing: {relative}")
+
+
 def validate_config(root: Path) -> None:
     config = (root / ".config").read_text(encoding="utf-8")
     enabled = set(re.findall(r"^(CONFIG_PACKAGE_[^=]+)=y$", config, re.MULTILINE))
@@ -174,6 +197,7 @@ def main() -> None:
     dtsi = (root / DTSI).read_text(encoding="utf-8")
     validate_layout_text(dtsi)
     validate_image_definition(root)
+    validate_performance(root, overlay=not args.skip_config)
     if not args.skip_config:
         validate_config(root)
     if args.artifacts:

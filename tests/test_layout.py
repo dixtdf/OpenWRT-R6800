@@ -24,7 +24,17 @@ def main() -> None:
             destination = root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(REPO / "tests/fixtures" / fixture, destination)
+        kernel_config = root / "target/linux/ramips/mt7621/config-6.6"
+        kernel_config.parent.mkdir(parents=True, exist_ok=True)
+        kernel_config.write_text(
+            "CONFIG_NET_MEDIATEK_SOC=y\n"
+            "CONFIG_NET_DSA=y\n"
+            'CONFIG_DEFAULT_TCP_CONG="cubic"\n',
+            encoding="utf-8",
+        )
+        shutil.copytree(REPO / "files", root / "files")
         subprocess.run([sys.executable, REPO / "scripts/apply-r6800-64mib.py", root], check=True)
+        subprocess.run([sys.executable, REPO / "scripts/apply-r6800-performance.py", root], check=True)
         shutil.copy(REPO / "config/r6800.config", root / ".config")
         subprocess.run([sys.executable, REPO / "scripts/validate-r6800.py", root], check=True)
 

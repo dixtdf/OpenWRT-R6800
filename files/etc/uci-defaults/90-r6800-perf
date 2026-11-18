@@ -1,0 +1,37 @@
+#!/bin/sh
+# First-boot performance defaults for the R6800 build.
+# Runs once (uci-defaults); everything here is also changeable at runtime
+# with /usr/sbin/r6800-perf.
+
+[ -f /etc/config/firewall ] || exit 0
+
+# Software flow offloading: near line-rate LAN<->WAN forwarding on MT7621.
+# NOTE: SQM/QoS cannot see offloaded flows.  Use `r6800-perf sqm` if you
+# enable SQM later.
+uci -q get firewall.@defaults[0] >/dev/null && {
+	uci set firewall.@defaults[0].flow_offloading='1'
+	uci set firewall.@defaults[0].flow_offloading_hw='0'
+	uci commit firewall
+}
+
+# Keep packet steering enabled so RX softirq work is spread over all cores.
+[ -f /etc/config/network ] && uci -q get network.globals >/dev/null && {
+	uci set network.globals.packet_steering='1'
+	uci commit network
+}
+
+# Country code unlocks the (legal in CN) 5 GHz 149-165 channels at 23-33 dBm.
+# Only filled in when unset, so manual choices are never overwritten.
+[ -f /etc/config/wireless ] && {
+	changed=0
+	for radio in radio0 radio1; do
+		country="$(uci -q get wireless.$radio.country)"
+		if [ -z "$country" ] && [ -n "$(uci -q get wireless.$radio)" ]; then
+			uci set wireless.$radio.country='CN'
+			changed=1
+		fi
+	done
+	[ "$changed" = 1 ] && uci commit wireless
+}
+
+exit 0

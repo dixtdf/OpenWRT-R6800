@@ -12,7 +12,7 @@ iwinfo phy0-ap0: Tx-Power: 6 dBm
 
 ## 根因
 
-R6800 的 MT7615 校准数据位于 **factory 分区**（原厂 mtd6，2 MiB）：
+R6800 的 MT7615 校准数据位于 **factory 分区**（2 MiB，位置由原厂 `SC PART MAP` 决定，本机实测偏移为 `0x04620000`；MTD 编号和偏移会随分区布局变化，`r6800-factory` 按名称优先自动识别，失败时才用偏移兜底）：
 
 ```
 0x0000  MT7615 eeprom slot 0（2.4GHz）
@@ -26,7 +26,7 @@ ra0   00:0C:43:28:05:00
 rai0  00:0C:43:28:05:E8
 ```
 
-而本机（OpenWrt）的 factory 分区开头是 `55 42 49 23`（`"UBI#"`），说明**旧布局的 76 MiB UBI 覆盖了整个 factory 区**（0x00600000 + 0x04C00000 = 0x05200000，与 factory 0x04600000 重叠 2 MiB）。
+如果 factory 被旧布局覆盖，分区开头会变成 `55 42 49 23`（`"UBI#"`），说明**旧布局的 76 MiB UBI 覆盖了整个 factory 区**（0x00600000 + 0x04C00000 = 0x05200000，与 factory 0x04620000 重叠 2 MiB）。
 
 驱动读不到有效 eeprom，回退默认：随机 MAC + 6 dBm 功率表。
 
