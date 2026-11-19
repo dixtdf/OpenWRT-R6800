@@ -65,6 +65,11 @@ jobs:
           git -C /tmp/vantage checkout "$VANTAGE_COMMIT"
           cp -a /tmp/vantage/luci-theme-vantage /tmp/vantage/luci-app-vantage openwrt/package/
           rm -rf /tmp/vantage
+          # 25.12 moved the CCACHE switch to the SDK Kconfig; expose it in the
+          # firmware build so CONFIG_CCACHE=y is honoured (rules.mk wraps CC).
+          if ! grep -q 'config CCACHE' openwrt/Config.in; then
+            printf '\nconfig CCACHE\n\tbool "Use ccache"\n\nconfig CCACHE_DIR\n\tstring "Set ccache directory"\n\tdepends on CCACHE\n' >> openwrt/Config.in
+          fi
 
       - name: Prepare ccache
         run: |
