@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the Sercomm size-override patch against Linux 6.6."""
+"""Check the Sercomm size-override patch against Linux 6.12."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory

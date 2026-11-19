@@ -24,7 +24,7 @@ def main() -> None:
             destination = root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(REPO / "tests/fixtures" / fixture, destination)
-        kernel_config = root / "target/linux/ramips/mt7621/config-6.6"
+        kernel_config = root / "target/linux/ramips/mt7621/config-6.12"
         kernel_config.parent.mkdir(parents=True, exist_ok=True)
         kernel_config.write_text(
             "CONFIG_NET_MEDIATEK_SOC=y\n"

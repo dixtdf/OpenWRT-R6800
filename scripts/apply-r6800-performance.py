@@ -11,7 +11,7 @@ userspace overlay (sysctl + uci-defaults + r6800-perf).
 from pathlib import Path
 import sys
 
-KERNEL_CONFIG = Path("target/linux/ramips/mt7621/config-6.6")
+KERNEL_CONFIG = Path("target/linux/ramips/mt7621/config-6.12")
 BEGIN = "# --- R6800 performance options (managed) ---"
 END = "# --- end R6800 performance options ---"
 

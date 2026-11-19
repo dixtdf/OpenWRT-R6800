@@ -13,7 +13,7 @@ SCRIPT = REPO / "scripts/apply-r6800-performance.py"
 def test_kernel_config() -> None:
     with TemporaryDirectory(dir=REPO) as temporary:
         root = Path(temporary)
-        config = root / "target/linux/ramips/mt7621/config-6.6"
+        config = root / "target/linux/ramips/mt7621/config-6.12"
         config.parent.mkdir(parents=True)
         config.write_text(
             "CONFIG_NET_MEDIATEK_SOC=y\n"

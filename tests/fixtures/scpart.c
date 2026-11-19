@@ -30,6 +30,7 @@ static const char sc_part_magic[] = {
 };
 #define	PART_MAGIC_LEN		sizeof(sc_part_magic)
 
+/* assumes that all fields are set by CPU native endian */
 struct sc_part_desc {
 	uint32_t	part_id;
 	uint32_t	part_offs;
@@ -136,7 +137,7 @@ out:
 
 static int scpart_parse(struct mtd_info *master,
 			const struct mtd_partition **pparts,
-			const struct mtd_part_parser_data *data)
+			struct mtd_part_parser_data *data)
 {
 	const char *partname;
 	int n;

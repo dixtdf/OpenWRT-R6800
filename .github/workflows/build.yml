@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OPENWRT_VERSION: v24.10.6
+  OPENWRT_VERSION: v25.12.6
   EASYTIER_LUCI_COMMIT: 9c51d3f8d2bfcefd039f2ff2354c6a7674293a06
   VANTAGE_COMMIT: faade36bb629f84b1e233edcad9e37abc500ae52
 

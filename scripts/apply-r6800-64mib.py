@@ -7,7 +7,7 @@ import sys
 
 DTSI = Path("target/linux/ramips/dts/mt7621_netgear_sercomm_bzv.dtsi")
 IMAGE = Path("target/linux/ramips/image/mt7621.mk")
-KERNEL_PATCH = Path("target/linux/ramips/patches-6.6/901-scpart-dts-size.patch")
+KERNEL_PATCH = Path("target/linux/ramips/patches-6.12/901-scpart-dts-size.patch")
 OLD_UBI = "reg = <0x600000 0x2800000>;"
 NEW_UBI = "reg = <0x600000 0x4000000>;"
 

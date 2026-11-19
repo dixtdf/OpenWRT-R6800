@@ -112,7 +112,7 @@ def validate_image_definition(root: Path) -> None:
 
 
 def validate_performance(root: Path, overlay: bool) -> None:
-    kernel_config = (root / "target/linux/ramips/mt7621/config-6.6").read_text(
+    kernel_config = (root / "target/linux/ramips/mt7621/config-6.12").read_text(
         encoding="utf-8")
     require("CONFIG_TCP_CONG_BBR=y" in kernel_config,
             "BBR is not built into the kernel")
@@ -194,7 +194,7 @@ def main() -> None:
     args = parser.parse_args()
     root = args.openwrt_dir.resolve()
 
-    require((root / "target/linux/ramips/patches-6.6/901-scpart-dts-size.patch").is_file(),
+    require((root / "target/linux/ramips/patches-6.12/901-scpart-dts-size.patch").is_file(),
             "Sercomm runtime size-override kernel patch is missing")
     dtsi = (root / DTSI).read_text(encoding="utf-8")
     validate_layout_text(dtsi)
