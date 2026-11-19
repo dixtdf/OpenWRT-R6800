@@ -145,8 +145,8 @@ jobs:
 
       - name: Verify the extra LuCI packages
         run: |
-          grep -E '^CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano)=y$' openwrt/config.buildinfo
-          grep -E 'vantage|ttyd|htop|nano' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
+          grep -E '^(CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr|socat|screen|luci-app-watchcat|luci-app-commands)=y)$' openwrt/config.buildinfo
+          grep -E 'vantage|ttyd|htop|nano|mtr|socat|screen|watchcat|commands' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
 
       - name: Upload firmware
         if: ${{ success() || steps.compile.outcome == 'success' }}
@@ -216,7 +216,11 @@ jobs:
             - 中文语言包：luci-i18n-ttyd-zh-cn
 
             **常用工具**
-            - htop、nano
+            - htop、nano、mtr、socat、screen
+
+            **网络与运维**
+            - **看门狗**：luci-app-watchcat（断网自动重启/切换）
+            - **快捷命令**：luci-app-commands（LuCI 自定义命令按钮）
 
             **其它中文界面**
             - luci-i18n-base-zh-cn、luci-i18n-firewall-zh-cn、
