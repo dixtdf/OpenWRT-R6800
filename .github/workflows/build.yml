@@ -190,18 +190,20 @@ jobs:
           path: images
       - name: Get build time
         id: build_time
-        run: echo "name=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "ts=$(date -u +'%Y%m%d-%H%M%S')" >> "$GITHUB_OUTPUT"
+          echo "name=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_OUTPUT"
 
-      - name: Publish release
+      - name: Publish release (one new release per build)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-latest
-          name: ${{ steps.build_time.outputs.name }}
+          tag_name: ${{ env.OPENWRT_VERSION }}-${{ steps.build_time.outputs.ts }}
+          name: OpenWrt ${{ env.OPENWRT_VERSION }} · ${{ steps.build_time.outputs.name }}
           body: |
             ## R6800 OpenWrt 64MiB 固件
 
             - 构建时间：${{ steps.build_time.outputs.name }}
-            - 基础：OpenWrt v24.10.6（ramips/mt7621）
+            - 基础：OpenWrt ${{ env.OPENWRT_VERSION }}（ramips/mt7621）
 
             ### 额外集成内容（中文标记）
 
