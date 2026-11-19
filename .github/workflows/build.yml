@@ -66,23 +66,31 @@ jobs:
           cp -a /tmp/vantage/luci-theme-vantage /tmp/vantage/luci-app-vantage openwrt/package/
           rm -rf /tmp/vantage
 
-      - name: Cache downloads and cross toolchain
+      - name: Cache downloads (shared across versions, like docker layers)
         uses: actions/cache@v4
         with:
-          path: |
-            openwrt/dl
-            openwrt/staging_dir/toolchain-mipsel_24kc_*_musl
-            openwrt/build_dir/toolchain-mipsel_24kc_*_musl
-          key: openwrt-${{ env.OPENWRT_VERSION }}-tc-v2-mt7621
-          restore-keys: openwrt-${{ env.OPENWRT_VERSION }}-tc-v2-mt7621
+          path: openwrt/dl
+          key: openwrt-dl-mt7621
+          restore-keys: |
+            openwrt-dl-mt7621
+            openwrt-dl-
 
-      - name: Cache built kernel and target staging
+      - name: Cache cross toolchain
+        uses: actions/cache@v4
+        with:
+          path: openwrt/staging_dir/toolchain-mipsel_24kc_*_musl
+          key: openwrt-${{ env.OPENWRT_VERSION }}-tc-v3-mt7621
+          restore-keys: |
+            openwrt-${{ env.OPENWRT_VERSION }}-tc-
+            openwrt-tc-
+
+      - name: Cache kernel build + target staging
         uses: actions/cache@v4
         with:
           path: |
             openwrt/build_dir/target-mipsel_24kc_musl/linux-ramips_mt7621
             openwrt/staging_dir/target-mipsel_24kc_musl
-          key: openwrt-${{ env.OPENWRT_VERSION }}-kernel-${{ hashFiles('config/**', 'scripts/**', 'patches/**') }}
+          key: openwrt-${{ env.OPENWRT_VERSION }}-kernel-mt7621
           restore-keys: |
             openwrt-${{ env.OPENWRT_VERSION }}-kernel-
 
