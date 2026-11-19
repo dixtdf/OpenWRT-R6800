@@ -145,8 +145,8 @@ jobs:
 
       - name: Verify the extra LuCI packages
         run: |
-          grep -E '^CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr)=y$' openwrt/config.buildinfo
-          grep -E 'vantage|ttyd|htop|nano|mtr' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
+          grep -E '^CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano)=y$' openwrt/config.buildinfo
+          grep -E 'vantage|ttyd|htop|nano' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
 
       - name: Upload firmware
         if: ${{ success() || steps.compile.outcome == 'success' }}
@@ -214,7 +214,7 @@ jobs:
             - 中文语言包：luci-i18n-ttyd-zh-cn
 
             **常用工具**
-            - htop、nano、mtr
+            - htop、nano
 
             **其它中文界面**
             - luci-i18n-base-zh-cn、luci-i18n-firewall-zh-cn、
