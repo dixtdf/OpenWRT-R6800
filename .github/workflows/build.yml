@@ -84,14 +84,17 @@ jobs:
             openwrt-${{ env.OPENWRT_VERSION }}-tc-
             openwrt-tc-
 
-      - name: Cache kernel build + target staging
+      - name: Cache compiled packages, kernel and staging
         uses: actions/cache@v4
         with:
           path: |
-            openwrt/build_dir/target-mipsel_24kc_musl/linux-ramips_mt7621
+            openwrt/build_dir/host
+            openwrt/build_dir/target-mipsel_24kc_musl
+            openwrt/staging_dir/host
             openwrt/staging_dir/target-mipsel_24kc_musl
-          key: openwrt-${{ env.OPENWRT_VERSION }}-kernel-mt7621
+          key: openwrt-${{ env.OPENWRT_VERSION }}-build-v2-mt7621
           restore-keys: |
+            openwrt-${{ env.OPENWRT_VERSION }}-build-
             openwrt-${{ env.OPENWRT_VERSION }}-kernel-
 
       - name: Apply and verify the 64 MiB R6800 layout
