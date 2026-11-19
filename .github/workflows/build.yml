@@ -145,7 +145,7 @@ jobs:
 
       - name: Verify the extra LuCI packages
         run: |
-          grep -E '^(CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr|socat|screen|luci-app-watchcat|luci-app-commands)=y)$' openwrt/config.buildinfo
+          grep -E '^(CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr-nojson|socat|screen|luci-app-watchcat|luci-app-commands)=y)$' openwrt/config.buildinfo
           grep -E 'vantage|ttyd|htop|nano|mtr|socat|screen|watchcat|commands' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
 
       - name: Upload firmware
