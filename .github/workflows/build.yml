@@ -23,6 +23,7 @@ concurrency:
 env:
   OPENWRT_VERSION: v24.10.6
   EASYTIER_LUCI_COMMIT: 9c51d3f8d2bfcefd039f2ff2354c6a7674293a06
+  VANTAGE_COMMIT: faade36bb629f84b1e233edcad9e37abc500ae52
 
 jobs:
   build:
@@ -54,12 +55,16 @@ jobs:
           python3 tests/test_scpart_patch.py
           python3 tests/test_perf_config.py
 
-      - name: Check out OpenWrt and EasyTier
+      - name: Check out OpenWrt, EasyTier and the Vantage theme
         run: |
           git clone --depth 1 --branch "$OPENWRT_VERSION" https://github.com/openwrt/openwrt.git openwrt
           git clone https://github.com/EasyTier/luci-app-easytier.git openwrt/package/easytier-luci
           git -C openwrt/package/easytier-luci checkout "$EASYTIER_LUCI_COMMIT"
           git -C openwrt/package/easytier-luci apply "$GITHUB_WORKSPACE/patches/easytier/0001-verify-mipsel-core-sha256.patch"
+          git clone https://github.com/anothaDev/luci-theme-vantage.git /tmp/vantage
+          git -C /tmp/vantage checkout "$VANTAGE_COMMIT"
+          cp -a /tmp/vantage/luci-theme-vantage /tmp/vantage/luci-app-vantage openwrt/package/
+          rm -rf /tmp/vantage
 
       - name: Cache downloads and cross toolchain
         uses: actions/cache@v4
@@ -138,6 +143,11 @@ jobs:
           grep -E '^# CONFIG_DEFAULT_CUBIC is not set$' "$KCONFIG"
           grep -E '^CONFIG_NET_MEDIATEK_SOC=y$' "$KCONFIG"
 
+      - name: Verify the extra LuCI packages
+        run: |
+          grep -E '^CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr)=y$' openwrt/config.buildinfo
+          grep -E 'vantage|ttyd|htop|nano|mtr' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
+
       - name: Upload firmware
         if: ${{ success() || steps.compile.outcome == 'success' }}
         uses: actions/upload-artifact@v4
@@ -178,12 +188,41 @@ jobs:
         with:
           name: OpenWrt-R6800-64MiB-${{ github.run_number }}
           path: images
+      - name: Get build time
+        id: build_time
+        run: echo "name=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> "$GITHUB_OUTPUT"
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-latest
-          name: build-latest
-          body: "Automated R6800 64MiB build."
+          name: ${{ steps.build_time.outputs.name }}
+          body: |
+            ## R6800 OpenWrt 64MiB 固件
+
+            - 构建时间：${{ steps.build_time.outputs.name }}
+            - 基础：OpenWrt v24.10.6（ramips/mt7621）
+
+            ### 额外集成内容（中文标记）
+
+            **主题与界面**
+            - **Vantage 主题**（默认主题）＋ **Vantage 仪表盘**
+            - 中文语言包：luci-i18n-vantage-zh-cn、luci-i18n-vantage-theme-zh-cn
+
+            **终端**
+            - **ttyd** Web 终端服务 ＋ **LuCI 终端界面**（luci-app-ttyd）
+            - 中文语言包：luci-i18n-ttyd-zh-cn
+
+            **常用工具**
+            - htop、nano、mtr
+
+            **其它中文界面**
+            - luci-i18n-base-zh-cn、luci-i18n-firewall-zh-cn、
+              luci-i18n-package-manager-zh-cn、luci-i18n-ddns-zh-cn、
+              luci-i18n-sqm-zh-cn、luci-i18n-easytier-zh-cn
+
+            **网络与性能**
+            - DDNS、SQM、USB 存储、iperf3、ethtool、BBR 内核、flow offloading
           files: |
             images/**/*.bin
             images/**/*.img

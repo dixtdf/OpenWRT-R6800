@@ -1,0 +1,29 @@
+#!/bin/sh
+# First-boot LuCI defaults for the R6800 build.
+# Default theme: Vantage.  Default language: Simplified Chinese.
+#
+# Vantage's own uci-defaults (30_luci-theme-vantage) already registers the
+# theme and switches to it on a fresh install; this runs after it to make the
+# choice explicit and to pick the language.
+
+[ -f /etc/config/luci ] || exit 0
+
+# Register the theme (only when it is actually installed), then use it as the
+# default unless an administrator already picked a different theme.
+if [ -d /www/luci-static/vantage ]; then
+	uci -q set luci.themes.Vantage=/luci-static/vantage
+
+	if [ -z "$(uci -q get luci.main.mediaurlbase)" ]; then
+		uci -q set luci.main.mediaurlbase=/luci-static/vantage
+	fi
+
+	uci -q commit luci
+fi
+
+# Simplified Chinese as the default language, only when not chosen already.
+if [ -z "$(uci -q get luci.main.lang)" ]; then
+	uci -q set luci.main.lang=zh_cn
+	uci -q commit luci
+fi
+
+exit 0
