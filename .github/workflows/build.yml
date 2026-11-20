@@ -161,7 +161,8 @@ jobs:
 
       - name: Verify the extra LuCI packages
         run: |
-          grep -E '^(CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr-nojson|socat|screen|luci-app-watchcat|luci-app-commands)=y)$' openwrt/config.buildinfo
+          grep -E '^(CONFIG_PACKAGE_(luci-theme-vantage|luci-app-vantage|luci-i18n-vantage-zh-cn|luci-i18n-vantage-theme-zh-cn|ttyd|luci-app-ttyd|luci-i18n-ttyd-zh-cn|htop|nano|mtr-nojson|socat|screen|luci-app-watchcat|luci-app-commands|wpad-mbedtls|usteer|luci-app-usteer|luci-i18n-usteer-zh-cn)=y)$' openwrt/config.buildinfo
+          grep -E 'wpad-mbedtls|usteer' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
           grep -E 'vantage|ttyd|htop|nano|mtr|socat|screen|watchcat|commands' openwrt/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-netgear_r6800.manifest
 
       - name: Upload firmware
@@ -233,6 +234,12 @@ jobs:
 
             **常用工具**
             - htop、nano、mtr、socat、screen
+
+            **WiFi（完整功能）**
+            - **完整版 wpad**（wpad-mbedtls）：支持 802.11k/v/r、WPA3、WPS、EAP/RADIUS
+            - **频段引导**：usteer 漫游辅助守护进程（2.4G/5G 自动切换）＋ LuCI 界面
+            - 首次启动自动开启 802.11k（RRM）与 802.11v（BSS Transition）
+            - 中文语言包：luci-i18n-usteer-zh-cn
 
             **网络与运维**
             - **看门狗**：luci-app-watchcat（断网自动重启/切换）

@@ -1,0 +1,31 @@
+#!/bin/sh
+# First-boot WiFi defaults for the R6800 build.
+#
+# The image ships the full wpad (wpad-mbedtls), so 802.11k (RRM) and
+# 802.11v (BSS Transition) are compiled in.  Enable both on every WiFi
+# interface so that usteer / band steering can work, and make sure the
+# usteer roaming daemon is enabled on the LAN bridge.
+#
+# Only add the options when they are absent, so an administrator's explicit
+# choice is never overwritten.
+
+[ -f /etc/config/wireless ] || exit 0
+
+for sec in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/\1/p'); do
+	[ "$(uci -q get wireless."$sec".mode)" = "ap" ] || continue
+	[ -z "$(uci -q get wireless."$sec".ieee80211k)" ] && \
+		uci -q set wireless."$sec".ieee80211k='1'
+	[ -z "$(uci -q get wireless."$sec".bss_transition)" ] && \
+		uci -q set wireless."$sec".bss_transition='1'
+done
+uci -q commit wireless
+
+# usteer: official OpenWrt roaming / band-steering assist daemon.
+if [ -f /etc/config/usteer ]; then
+	uci -q set usteer.@usteer[0].enabled='1'
+	uci -q set usteer.@usteer[0].network='lan'
+	uci -q commit usteer
+	[ -x /etc/init.d/usteer ] && /etc/init.d/usteer enable 2>/dev/null
+fi
+
+exit 0
