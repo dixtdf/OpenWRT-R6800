@@ -235,11 +235,13 @@ jobs:
             **常用工具**
             - htop、nano、mtr、socat、screen
 
-            **WiFi（完整功能）**
+            **WiFi（完整功能，默认不预配置）**
             - **完整版 wpad**（wpad-mbedtls）：支持 802.11k/v/r、WPA3、WPS、EAP/RADIUS
             - **频段引导**：usteer 漫游辅助守护进程（2.4G/5G 自动切换）＋ LuCI 界面
-            - 首次启动自动开启 802.11k（RRM）、802.11v（BSS Transition）、802.11r（FT-PSK 快速漫游）
             - 中文语言包：luci-i18n-usteer-zh-cn
+            - 出厂**不做任何 WiFi 预配置**：SSID、密码、国家码、信道、功率、
+              802.11k/v/r 全部由使用者在 LuCI 中手动设置
+            - 802.11k/v/r 开关位置：**网络 → 无线 → 编辑 → 无线安全 → 漫游**
 
             **网络与运维**
             - **看门狗**：luci-app-watchcat（断网自动重启/切换）
