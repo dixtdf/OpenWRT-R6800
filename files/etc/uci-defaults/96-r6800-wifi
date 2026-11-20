@@ -1,10 +1,14 @@
 #!/bin/sh
 # First-boot WiFi defaults for the R6800 build.
 #
-# The image ships the full wpad (wpad-mbedtls), so 802.11k (RRM) and
-# 802.11v (BSS Transition) are compiled in.  Enable both on every WiFi
-# interface so that usteer / band steering can work, and make sure the
-# usteer roaming daemon is enabled on the LAN bridge.
+# The image ships the full wpad (wpad-mbedtls), so 802.11k (RRM),
+# 802.11v (BSS Transition) and 802.11r (Fast Transition) are compiled in.
+# Enable them on every AP interface so that usteer / band steering can work,
+# and make sure the usteer roaming daemon is enabled on the LAN bridge.
+#
+# 802.11r uses FT-PSK with locally generated keys (ft_psk_generate_local), the
+# same mobility domain on both radios, so a client can roam between 2.4 GHz and
+# 5 GHz without a full re-authentication.
 #
 # Only add the options when they are absent, so an administrator's explicit
 # choice is never overwritten.
@@ -17,6 +21,14 @@ for sec in $(uci -q show wireless | sed -n 's/^wireless\.\([^.=]*\)=wifi-iface$/
 		uci -q set wireless."$sec".ieee80211k='1'
 	[ -z "$(uci -q get wireless."$sec".bss_transition)" ] && \
 		uci -q set wireless."$sec".bss_transition='1'
+	[ -z "$(uci -q get wireless."$sec".ieee80211r)" ] && \
+		uci -q set wireless."$sec".ieee80211r='1'
+	[ -z "$(uci -q get wireless."$sec".ft_psk_generate_local)" ] && \
+		uci -q set wireless."$sec".ft_psk_generate_local='1'
+	[ -z "$(uci -q get wireless."$sec".mobility_domain)" ] && \
+		uci -q set wireless."$sec".mobility_domain='1a2b'
+	[ -z "$(uci -q get wireless."$sec".reassociation_deadline)" ] && \
+		uci -q set wireless."$sec".reassociation_deadline='1000'
 done
 uci -q commit wireless
 

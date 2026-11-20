@@ -238,7 +238,7 @@ jobs:
             **WiFi（完整功能）**
             - **完整版 wpad**（wpad-mbedtls）：支持 802.11k/v/r、WPA3、WPS、EAP/RADIUS
             - **频段引导**：usteer 漫游辅助守护进程（2.4G/5G 自动切换）＋ LuCI 界面
-            - 首次启动自动开启 802.11k（RRM）与 802.11v（BSS Transition）
+            - 首次启动自动开启 802.11k（RRM）、802.11v（BSS Transition）、802.11r（FT-PSK 快速漫游）
             - 中文语言包：luci-i18n-usteer-zh-cn
 
             **网络与运维**
