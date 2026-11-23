@@ -1,0 +1,22 @@
+# watchcat defaults for the R6800 build.
+#
+# The package default probes 8.8.8.8, which sits behind an international
+# link on Chinese networks and produces false "no connectivity" reports
+# (measured: intermittent failures and ~44 ms RTT, versus 15-19 ms for
+# domestic resolvers).  A false positive here only creates log noise, but a
+# genuine 6 h window would reboot the whole router.
+#
+# Two domestic, well-peered targets are used instead.  watchcat pings every
+# host in the list and refreshes the failure timer as soon as ANY of them
+# answers, so both would have to be unreachable for the reboot to trigger.
+#
+# period stays at the package default of 6 h: a shorter window would turn
+# an upstream outage into a reboot loop, and a reboot cannot fix an upstream
+# fault anyway.  223.5.5.5 is AliDNS, 180.76.76.76 is Baidu's resolver.
+
+config watchcat
+	option period '6h'
+	option mode 'ping_reboot'
+	option pinghosts '223.5.5.5 180.76.76.76'
+	option pingperiod '60'
+	option forcedelay '30'
